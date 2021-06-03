@@ -1623,9 +1623,16 @@ bool State::is_symbolic_temp(vex_tmp_id_t temp_id) const {
 }
 
 void State::propagate_taints() {
-	if (stopped || is_symbolic_tracking_disabled()) {
-		// We're not checking symbolic registers so no need to propagate taints. Also, ensure execution is still active
-		// before propagating taints.
+	if (stopped) {
+		// Ensure execution is still active before propagating taints.
+		return;
+	}
+	if (is_symbolic_taint_propagation_disabled()) {
+		// If symbolic tracking is disabled, all writes are concrete. Propagate taint for the pending writes.
+		for (auto &mem_write: block_mem_writes_data) {
+			// Instruction address can be 0 since write is concrete: only symbolic writes need the address
+			propagate_write_taint(mem_write.first, mem_write.second, false, 0);
+		}
 		return;
 	}
 	VEXLiftResult *lift_ret;
