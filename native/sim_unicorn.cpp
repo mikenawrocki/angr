@@ -2247,12 +2247,13 @@ uc_err simunicorn_start(State *state, uint64_t pc, uint64_t step) {
 }
 
 extern "C"
-void simunicorn_stop(State *state, stop_t reason) {
+bool simunicorn_stop(State *state, stop_t reason) {
 	if (reason == STOP_SYSCALL) {
 		// Propagate taints for the last block executed before stopping
 		state->propagate_taints();
 	}
 	state->stop(reason);
+	return (state->stop_details.stop_reason == reason);
 }
 
 extern "C"

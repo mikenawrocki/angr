@@ -337,7 +337,7 @@ def _load_native():
         _setup_prototype(h, 'hook', None, state_t)
         _setup_prototype(h, 'unhook', None, state_t)
         _setup_prototype(h, 'start', uc_err, state_t, ctypes.c_uint64, ctypes.c_uint64)
-        _setup_prototype(h, 'stop', None, state_t, stop_t)
+        _setup_prototype(h, 'stop', ctypes.c_bool, state_t, stop_t)
         _setup_prototype(h, 'sync', ctypes.POINTER(MEM_PATCH), state_t)
         _setup_prototype(h, 'bbl_addrs', ctypes.POINTER(ctypes.c_uint64), state_t)
         _setup_prototype(h, 'stack_pointers', ctypes.POINTER(ctypes.c_uint64), state_t)
@@ -751,8 +751,9 @@ class Unicorn(SimStatePlugin):
         # unicorn does not support syscall, we should giveup emulation
         # and send back to SimProcedure. (ignore is always False)
         l.info('stop emulation')
-        self.jumpkind = 'Ijk_Sys_syscall'
-        _UC_NATIVE.stop(self._uc_state, STOP.STOP_SYSCALL)
+        if _UC_NATIVE.stop(self._uc_state, STOP.STOP_SYSCALL):
+            # Syscall stop requested was successful. Set jumpkind.
+            self.jumpkind = 'Ijk_Sys_syscall'
 
     def _concretize(self, d):
         cd = self.state.solver.eval_to_ast(d, 1)[0]
